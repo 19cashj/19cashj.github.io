@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Weather</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="pe-icon-set-weather/css/pe-icon-set-weather.css">
+    <link rel="stylesheet" href="pe-icon-set-weather/css/helper.css">
+</head>
+<body>
+    <header>
+        <h1 class="headText">Random Weather</h1>
+    </header>
+    <h2 id="loadingMsg">Please Allow Location</h2>
+    <div class="main-container hidden">
+        <h3 id="date">Time, Day, Month, Year</h3>
+        <h3 id="location">Location</h3>
+        <div class="topContainer">
+            <div class="container1">
+                <span class="weatherImg pe-5x"></span>
+                <h1 id="weatherType">placeholder</h1>
+                <h1 id="temperature">placeholder</h1>
+            </div>
+            <div class="hourlyClock">
+                <span id="h_0" class="hour pe-2x"></span>
+                <span id="h_1" class="hour pe-2x"></span>
+                <span id="h_2" class="hour pe-2x"></span>
+                <span id="h_3" class="hour pe-2x"></span>
+                <span id="h_4" class="hour pe-2x"></span>
+                <span id="h_5" class="hour pe-2x"></span>
+                <span id="h_6" class="hour pe-2x"></span>
+                <span id="h_7" class="hour pe-2x"></span>
+                <span id="h_8" class="hour pe-2x"></span>
+                <span id="h_9" class="hour pe-2x"></span>
+                <span id="h_10" class="hour pe-2x"></span>
+                <span id="h_11" class="hour pe-2x"></span>
+                <canvas id="clockCanvas" height="250px" width="250px"></canvas>
+            </div>
+        </div>
+        <div class="container2">
+            <span id="humidity" class="weatherImg pe-is-w-mist pe-3x">placeholder</span>
+            <span id="wind" class="weatherImg pe-is-w-wind pe-3x">placeholder</span>
+        </div>
+        <div class="daysContainer">
+            <ul id="weatherWeek">
+                <li id ="day1" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+                <li id ="day2" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+                <li id ="day3" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+                <li id ="day4" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+                <li id ="day5" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+                <li id ="day6" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+                <li id ="day7" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+                <li id ="day8" class="daySelection">
+                    <h4 class="daysText"></h4>
+                    <span class="weeklyWeatherImg pe-2x"></span>
+                    <span class="highLow"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>
