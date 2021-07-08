@@ -23,7 +23,7 @@ async function setCoords(position) {
     console.log(`Geolocated with Latitude: ${lat} Longitude: ${log}`)
     console.log("Fetching data from Openweathermap...")
     const response = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${log}&exclude=minutely&units=imperial&appid=943f1223b9996ecae3cb1fe9233e975b`);
-    const response2 = await fetch(`http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${log}&limit=1&appid=943f1223b9996ecae3cb1fe9233e975b`)
+    const response2 = await fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${log}&limit=1&appid=943f1223b9996ecae3cb1fe9233e975b`)
     if (!response.ok) {
         loadingMsg.innerText = (`Error ${response.status}`);
         throw new Error(`HTTP error! status: ${response.status}`);
