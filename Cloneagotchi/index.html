@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloneagotchi</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1 id="headTimer"></h1>
+        <button id="debug" onclick="drawPixelDebug()">Pixel Draw Debug Mode</button>
+        <button id="clearData" onclick="eraseDataDebug()">Erase All Data</button>
+    </header>
+    <section id="mainContainer">
+        <div id="parentGotchi">
+            <div id="screenContainer">
+                <div id="topSection" class="iconSection">
+                    <img class="menu grayedOut" src="img/foodIcon.png">
+                    <img class="menu grayedOut" src="img/lightIcon.png">
+                    <img class="menu grayedOut" src="img/gameIcon.png">
+                    <img class="menu grayedOut" src="img/medIcon.png">
+                </div>
+                <canvas id="screen" height="200px"></canvas>
+                <div id="bottomSection" class="iconSection">
+                    <img class="menu grayedOut" src="img/plungerIcon.png">
+                    <img class="menu grayedOut" src="img/scaleIcon.png">
+                    <img class="menu grayedOut" src="img/discIcon.png">
+                    <img class="menu grayedOut" src="img/moodIcon.png">
+                </div>
+            </div>
+            <div id="buttonContainer">
+                <button class="buttons" id="button1" onclick="button1()"></button>
+                <button class="buttons" id="button2" onclick="button2()"></button>
+                <button class="buttons" id="button3" onclick="button3()"></button>
+            </div>
+        </div>
+        <div id="communicator">
+            <p id="msg">> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Asperiores architecto facilis ad officia omnis deleniti unde quaerat laboriosam</p>
+        </div>
+    </section>
+    <script src="index.js"></script>
+</body>
+</html>
