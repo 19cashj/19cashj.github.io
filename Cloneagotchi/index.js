@@ -1,7 +1,6 @@
 let gameState = "none";
 let cloneagotchi;
 let startSeconds;
-let currentSeconds;
 let timeDifference;
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
@@ -12,14 +11,21 @@ let selectedPixel = 0;
 let prevPixel = 0;
 let debugDrawMode = false;
 let animateInterval;
+let timeInterval;
 let selectedIcon = 0;
 let subMenuSelection = 1;
 let lightsOn = true;
 let rapidSnackCheck = false;
 let statLock = false;
+let lightLock = false;
 let foodClock;
 let happinessClock;
+let lightsClock = 0;
 let foodWasteInc = 0;
+let gameDecision;
+let gameCount = 0;
+let gameWinCount = 0;
+let foodTimeout;
 
 document.addEventListener('keydown', buttonChoose, false);
 
@@ -61,7 +67,7 @@ class Cloneagotchi {
                     break;
             }
         }
-        if (lightsOn) {
+        if (lightsOn == true) {
             switch (this.growthStage) {
                 case "infant":
                 default:
@@ -86,6 +92,73 @@ class Cloneagotchi {
         else {
             ctx.fillStyle = "black";
             ctx.fillRect(0,0,500,500);
+        }
+    }
+
+    async gameAnimate(game=undefined, condition=undefined) {
+        if (game == undefined) { //First frame of the main animation will be drawn at the start of a game
+            if (condition == undefined) {
+                switch (this.growthStage) {
+                    case "infant":
+                    default:
+                        const { mInfantMain0 } = await import('./pixelData.js');
+                        const { fInfantMain0 } = await import('./pixelData.js');
+                        canvasClear();
+                        this.sex ? drawPreset(fInfantMain0[0]):drawPreset(mInfantMain0[0]);
+                }
+            }
+            else if (condition == "win") {
+                switch (this.growthStage) {
+                    case "infant":
+                    default:
+                        const { mInfantHappy } = await import('./pixelData.js');
+                        const { fInfantHappy } = await import('./pixelData.js');
+                        canvasClear();
+                        this.sex ? drawPreset(fInfantHappy[0]):drawPreset(mInfantHappy[0]);
+                }
+            }
+            else if (condition == "lose") {
+                switch (this.growthStage) {
+                    case "infant":
+                    default:
+                        const { mInfantSad } = await import('./pixelData.js');
+                        const { fInfantSad } = await import('./pixelData.js');
+                        canvasClear();
+                        this.sex ? drawPreset(fInfantSad[0]):drawPreset(mInfantSad[0]);
+                }
+            }
+        }
+
+        else if (game == "lr") {
+            switch (this.growthStage) {
+                case "infant":
+                default:
+                    const { mInfantMain0 } = await import('./pixelData.js');
+                    const { fInfantMain0 } = await import('./pixelData.js');
+                    canvasClear();
+                    if (condition == "right") {
+                        this.sex ? drawPreset(fInfantMain0[1]):drawPreset(mInfantMain0[1]);
+                    }
+                    else if (condition == "left") {
+                        this.sex ? drawPreset(fInfantMain0[2]):drawPreset(mInfantMain0[2]);
+                    }
+            }
+        }
+
+        else if (game == "hl") {
+            switch (this.growthStage) {
+                case "infant":
+                default:
+                    const { mInfantMain0 } = await import('./pixelData.js');
+                    const { fInfantMain0 } = await import('./pixelData.js');
+                    canvasClear();
+                    if (condition == "higher") {
+                        this.sex ? drawPreset(fInfantMain0[1]):drawPreset(mInfantMain0[1]);
+                    }
+                    else if (condition == "lower") {
+                        this.sex ? drawPreset(fInfantMain0[2]):drawPreset(mInfantMain0[2]);
+                    }
+            }
         }
     }
 
@@ -119,8 +192,30 @@ class Cloneagotchi {
             this.cry();
             this.careMistakes++;
         }
-        //Add more checks, if owner left the lights on at night etc
+        if (this.illness == 3) {
+            this.die();
+        }
+        if (cloneagotchi.careMistakes >= 5) { //Need to find the right amount of caremistakes to result in death, needs to be fair because the user can't see caremistakes
+            this.die();
+        }
+        //Add more checks, if owner left the lights on at night for too long etc
     }
+
+    async die() {
+        lightsOn = true;
+        clearInterval(timeInterval);
+        clearInterval(animateInterval);
+        clearTimeout(foodTimeout);
+        localStorage.clear();
+        canvasClear();
+        stateHandler("locked");
+        playSound("badNoti");
+        const { dead } = await import('./pixelData.js');
+        drawPreset(dead[0]);
+        playAnimation(dead, 2000, false);
+    }
+
+    //Rates for stat changes are a WIP, they are faster right now for testing purposes
 
     scriptedStatChange() {
         let gameSecondsTotal = currentSeconds - startSeconds;
@@ -266,7 +361,9 @@ class Cloneagotchi {
                 if (timeAway == false) {
                     cloneagotchi.illness++;
                     if (gameState == "main") {
-                        stateHandler("main");
+                        clearInterval(animateInterval);
+                        canvasClear();
+                        this.mainAnimate();
                     }
                     statLock = true;
                     setTimeout(() => {
@@ -301,7 +398,6 @@ class Cloneagotchi {
 
     exercised(won) {
         happinessClock = 0;
-        let randNum = Math.round(Math.random()*4);
         if(this.weight > 5) {
             this.weight--;
         }
@@ -310,13 +406,20 @@ class Cloneagotchi {
                 this.happiness++;
             }
         }
-        if (randNum == 2) {
-            this.hunger--;
-        }
     }
 
-    feed(food) {
+    async feed(food) {
         let snackCheckTimeout;
+        if (lightsOn == true) {
+            switch (this.growthStage) {
+                case "infant":
+                default:
+                    const { mInfantEating } = await import('./pixelData.js');
+                    const { fInfantEating } = await import('./pixelData.js');
+                    this.sex ? playAnimation(fInfantEating, 250, true):playAnimation(mInfantEating, 250, true);
+                    break;
+            }
+        }
         if (food == "meal") {
             if (this.hunger < 4) {
                 this.hunger++;
@@ -331,11 +434,13 @@ class Cloneagotchi {
             this.weight+=2;
             happinessClock = 0;
             if (rapidSnackCheck) {
-                this.illness = 1;
+                this.illness++;
                 if (gameState == "main") {
                     stateHandler("main");
                 }
-                //this.careMistakes++;
+                playSound("badNoti2")
+                this.careMistakes++;
+                this.checkCare();
                 clearTimeout(snackCheckTimeout);
             }
             rapidSnackCheck = true;
@@ -388,8 +493,10 @@ class Cloneagotchi {
             case 0:
                 break;
             case 1:
-                moodScore -= 1;
+                moodScore -= 2;
                 break;
+            case 2:
+                moodScore -= 3;
         }
         switch (this.waste) {
             case 0:
@@ -403,6 +510,8 @@ class Cloneagotchi {
                 break;
         }
         switch(moodScore) {
+            case -8:
+            case -7:
             case -6:
             case -5:
             case -4:
@@ -455,8 +564,9 @@ class Cloneagotchi {
     }
 }
 
-async function stateHandler(state) {
+async function stateHandler(state,extraInput=undefined) {
     gameState = state;
+    let higherOrLower;
     const { menuSelectPreset1 } = await import('./pixelData.js');
     switch (state) {
         case "title":
@@ -470,6 +580,7 @@ async function stateHandler(state) {
                   }
                 else {
                     loadGame();
+                    updateTime();
                     stateHandler("main");
                 }
             }, 3150);
@@ -502,6 +613,7 @@ async function stateHandler(state) {
                 console.log(localStorage.getItem('startSeconds'));
                 console.log(localStorage.getItem('cloneagotchiData'));
                 stateHandler("main");
+                updateTime();
             }, 16800);
             break;
         case "main":
@@ -533,6 +645,169 @@ async function stateHandler(state) {
             ctx.font = '25px Lucida Console';
             ctx.fillText('Left/Right', 50, 75);
             ctx.fillText('Higher/Lower', 50, 125);
+            break;
+        case "game-leftright":
+            if (extraInput == undefined) {
+                clearInterval(animateInterval);
+                canvasClear();
+                cloneagotchi.gameAnimate();
+                let randNum = Math.round(Math.random())
+                if (randNum) {
+                    gameDecision = "left";
+                }
+                else {
+                    gameDecision = "right";
+                }
+            }
+            else if (extraInput == "left" || extraInput == "right") {
+                if (gameDecision == "left") {
+                    cloneagotchi.gameAnimate("lr", "left");
+                }
+                else if (gameDecision == "right") {
+                    cloneagotchi.gameAnimate("lr", "right");
+                }
+                if (gameDecision == extraInput) {
+                    stateHandler("winScreen");
+                    setTimeout(() => {
+                        gameCount++;
+                        gameWinCount++;
+                        if (gameCount>=5) {
+                            if (gameWinCount>=3) {
+                                playSound("regularNoti");
+                                cloneagotchi.exercised(1);
+                            }
+                            else {
+                                playSound("badNoti2");
+                                cloneagotchi.exercised(0);
+                            }
+                            gameWinCount = 0;
+                            gameCount = 0;
+                            stateHandler("main")
+                        }
+                        else {
+                            stateHandler("game-leftright");
+                        }
+                    }, 1000);
+                }
+    
+                else if (gameDecision != extraInput) {
+                    stateHandler("loseScreen");
+                    setTimeout(() => {
+                        gameCount++;
+                        if (gameCount>=5) {
+                            if (gameWinCount>=3) {
+                                playSound("regularNoti");
+                                cloneagotchi.exercised(1);
+                            }
+                            else {
+                                playSound("badNoti2");
+                                cloneagotchi.exercised(0);
+                            }
+                            gameWinCount = 0;
+                            gameCount = 0;
+                            stateHandler("main")
+                        }
+                        else {
+                            stateHandler("game-leftright");
+                        }
+                    }, 1000);
+                }
+            }
+            break;
+        case "game-higherlower":
+            if (extraInput == undefined) {
+                clearInterval(animateInterval);
+                canvasClear();
+                cloneagotchi.gameAnimate();
+                gameDecision = Math.round(Math.random()*9)
+                setTimeout(() => {
+                    ctx.fillStyle = 'black';
+                    ctx.font = '25px Lucida Console';
+                    ctx.fillText(`${gameDecision}`, 50, 75);
+                }, 1);
+            }
+            else if (extraInput == "higher" || extraInput == "lower") {
+                let gameDecision2 = Math.round(Math.random()*9);
+                while (gameDecision == gameDecision2) {
+                    gameDecision2 = Math.round(Math.random()*9);
+                }
+                setTimeout(() => {
+                    ctx.fillStyle = 'black';
+                    ctx.font = '25px Lucida Console';
+                    ctx.fillText(`${gameDecision}`, 50, 75);
+                    ctx.fillText(`${gameDecision2}`, 225, 75);
+                }, 1);
+                if (gameDecision > gameDecision2) {
+                    cloneagotchi.gameAnimate("hl", "lower");
+                    higherOrLower = "lower";
+                }
+                else if (gameDecision < gameDecision2) {
+                    cloneagotchi.gameAnimate("hl", "higher");
+                    higherOrLower = "higher";
+                }
+                if (higherOrLower == extraInput) {
+                    stateHandler("winScreen");
+                    setTimeout(() => {
+                        gameCount++;
+                        gameWinCount++;
+                        if (gameCount>=5) {
+                            if (gameWinCount>=3) {
+                                playSound("regularNoti");
+                                cloneagotchi.exercised(1);
+                            }
+                            else {
+                                playSound("badNoti2");
+                                cloneagotchi.exercised(0);
+                            }
+                            gameWinCount = 0;
+                            gameCount = 0;
+                            higherOrLower = undefined;
+                            gameDecision2 = undefined;
+                            stateHandler("main")
+                        }
+                        else {
+                            stateHandler("game-higherlower");
+                        }
+                    }, 1000);
+                }
+
+                else if (higherOrLower != extraInput) {
+                    stateHandler("loseScreen");
+                    setTimeout(() => {
+                        gameCount++;
+                        if (gameCount>=5) {
+                            if (gameWinCount>=3) {
+                                playSound("regularNoti");
+                                cloneagotchi.exercised(1);
+                            }
+                            else {
+                                playSound("badNoti2");
+                                cloneagotchi.exercised(0);
+                            }
+                            gameWinCount = 0;
+                            gameCount = 0;
+                            higherOrLower = undefined;
+                            gameDecision2 = undefined;
+                            stateHandler("main")
+                        }
+                        else {
+                            stateHandler("game-higherlower");
+                        }
+                    }, 1000);
+                }
+            }
+            break;
+        case "winScreen":
+            playSound("beep1");
+            setTimeout(() => {
+                cloneagotchi.gameAnimate(undefined, "win");
+            }, 500);
+            break;
+        case "loseScreen":
+            playSound("beep3");
+            setTimeout(() => {
+                cloneagotchi.gameAnimate(undefined, "lose");
+            }, 500);
             break;
         case "medicine":
             if (cloneagotchi.illness == 1) {
@@ -586,6 +861,12 @@ async function stateHandler(state) {
             ctx.fillText('Your cloneagotchi', 25, 75);
             ctx.fillText(`feels ${cloneagotchi.moodCheck()}`, 50, 125);
             break;
+        case "locked":
+            const mainIcons = document.getElementsByClassName("menu");
+            for (i=0;i<mainIcons.length;i++) {
+                mainIcons[i].classList.add("grayedOut");
+            }
+            break;
     }
 }
 
@@ -594,9 +875,12 @@ function saveGame() {
     localStorage.setItem('previousSeconds', JSON.stringify(currentSeconds));
     localStorage.setItem('foodClock', JSON.stringify(foodClock));
     localStorage.setItem('happinessClock', JSON.stringify(happinessClock));
+    localStorage.setItem('lightsOn', JSON.stringify(lightsOn));
 }
 
 function loadGame() {
+    let currentTime = new Date();
+    currentSeconds = Math.round(currentTime.getTime()/1000);
     const cloneagotchiData = JSON.parse(localStorage.getItem('cloneagotchiData'));
     cloneagotchi = new Cloneagotchi(cloneagotchiData.age, cloneagotchiData.sex, cloneagotchiData.growthStage, cloneagotchiData.species, cloneagotchiData.happiness, cloneagotchiData.hunger, cloneagotchiData.weight, cloneagotchiData.discipline, cloneagotchiData.illness, cloneagotchiData.waste, cloneagotchiData.naughty, cloneagotchiData.careMistakes);
     startSeconds = parseInt(localStorage.getItem('startSeconds'));
@@ -609,8 +893,9 @@ function loadGame() {
 }
 
 function updateTime() {
-    setInterval(() => {
+    timeInterval = setInterval(() => {
         let currentTime = new Date();
+        let currentHour = currentTime.getHours();
         currentSeconds = Math.round(currentTime.getTime()/1000);
         foodClock++;
         happinessClock++;
@@ -619,6 +904,24 @@ function updateTime() {
             cloneagotchi.randomStatChange();
             cloneagotchi.guaranteedStatChange();
             cloneagotchi.scriptedStatChange();
+            if (lightsOn == false) {
+                lightsClock = 0;
+            }
+            else if (lightLock == false) {
+                lightsClock++;
+                if (currentHour <= 7 || currentHour >= 22) { //In the future, different species/growthstages will have different bedtimes. Get this to work without calling it every second
+                    lightLock = true;
+                    cloneagotchi.cry()
+                    setTimeout(() => {
+                        lightLock = false;
+                    }, 5000);
+                    if (lightsClock >= 5) {
+                        lightsClock = 0;
+                        playSound("badNoti2");
+                        cloneagotchi.careMistakes++;
+                    }
+                }
+            }
         }
     }, 1000);
 }
@@ -874,6 +1177,12 @@ async function button1() {
             ctx.fillText('Left/Right', 50, 75);
             ctx.fillText('Higher/Lower', 50, 125);
             break;
+        case "game-leftright": //User inputs "left"
+            stateHandler("game-leftright", "left");
+            break;
+        case "game-higherlower": //User inputs "lower"
+            stateHandler("game-higherlower", "lower");
+            break;
         case "statMenu":
             playSound("beep2");
             subMenuSelection++
@@ -960,31 +1269,38 @@ function button2() {
                 if(subMenuSelection == 1) { //Give a meal
                     playSound("beep1");
                     cloneagotchi.feed("meal");
-                    //Add feeding animation
                     subMenuSelection = 1;
-                    stateHandler("main");
+                    stateHandler("locked");
+                    foodTimeout = setTimeout(() => {
+                        clearInterval(animateInterval);
+                        stateHandler("main");
+                    }, 1000);
                 }
                 else if (subMenuSelection == 2) { //Give a snack
                     playSound("beep1");
                     cloneagotchi.feed("snack");
-                    //Add feeding animation
                     subMenuSelection = 1;
-                    stateHandler("main");
+                    stateHandler("locked");
+                    foodTimeout = setTimeout(() => {
+                        stateHandler("main");
+                    }, 1000);
                 }
                 break;
-            case "gameMenu": //TO BE DONE
+            case "gameMenu":
                 if(subMenuSelection == 1) {
                     playSound("beep1");
-                    subMenuSelection = 1;
-
-                    //stateHandler("main");
+                    stateHandler("game-leftright");
                 }
                 else if (subMenuSelection == 2) {
                     playSound("beep1");
-                    subMenuSelection = 1;
-
-                    //stateHandler("main");
+                    stateHandler("game-higherlower");
                 }
+                break;
+            case "game-leftright": //User inputs "right"
+                stateHandler("game-leftright", "right");
+                break;
+            case "game-higherlower": //User inputs "higher"
+                stateHandler("game-higherlower", "higher");
                 break;
             case "statMenu":
             case "moodMenu":
@@ -993,6 +1309,7 @@ function button2() {
                 stateHandler("main");
                 break;
             default:
+            case "locked":
                 break;
         }
 }
@@ -1006,13 +1323,21 @@ function button3() {
     }, 100);
     switch (state) {
         case "title":
+        case "locked":
         default:
             break;
         case "foodMenu":
         case "gameMenu":
         case "statMenu":
         case "moodMenu":
-            subMenuSelection = 0;
+            subMenuSelection = 1;
+            playSound("beep3");
+            stateHandler("main");
+            break;
+        case "game-leftright":
+        case "game-higherlower":
+            gameCount = 0;
+            gameWinCount = 0;
             playSound("beep3");
             stateHandler("main");
             break;
@@ -1020,4 +1345,3 @@ function button3() {
 }
 
 canvasInit();
-updateTime();
